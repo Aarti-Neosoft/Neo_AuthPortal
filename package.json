@@ -1,0 +1,25 @@
+{
+  "name": "neosoft-nodejs-loginapp",
+  "version": "1.0.0",
+  "description": "User Registration and OTP-Based Login Application (React + Node + Express + MongoDB)",
+  "scripts": {
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm.cmd --prefix server run dev\" \"npm.cmd --prefix client run dev\"",
+    "start": "npm.cmd run dev",
+    "server": "npm.cmd --prefix server run dev",
+    "client": "npm.cmd --prefix client run dev",
+    "install:all": "npm.cmd --prefix server install && npm.cmd --prefix client install"
+  },
+  "keywords": [
+    "otp",
+    "authentication",
+    "mern",
+    "express",
+    "react",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}
