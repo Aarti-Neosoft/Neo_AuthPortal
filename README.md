@@ -1,248 +1,249 @@
-# Neosoft Technologies — User Registration & OTP-Based Login Application
+# Neosoft Technologies — User Registration and OTP Login
 
-A secure, enterprise-grade, responsive full-stack authentication web application featuring user registration, OTP verification (via Email or Mobile), password strength validation, JWT session management, and a protected user dashboard.
+A full-stack authentication application built using React, Node.js, Express.js, and MongoDB. The application supports user registration, email or mobile OTP verification, password validation, JWT-based authentication, and a protected dashboard.
 
-Built using **React (Vite)**, **Node.js**, **Express.js**, and **MongoDB with Mongoose**.
+## Tech Stack
 
----
+**Frontend**
+- React 19
+- Vite
+- React Router DOM
+- Axios
+- CSS
 
-## 🌟 Key Features
+**Backend**
+- Node.js
+- Express.js
+- MongoDB and Mongoose
+- JSON Web Tokens (JWT)
+- bcrypt
+- Nodemailer for email delivery
+- Twilio for SMS delivery
+- express-rate-limit for API rate limiting
 
-### 1. User Registration (Page 1)
-- **Comprehensive Fields**: Full Name, Email Address, Mobile Number, Password, Confirm Password.
-- **Client & Server-Side Validation**: Strict email format checking, 10-digit mobile number validation, name length validation, and confirm password matching.
-- **Dynamic Password Strength Meter**: Real-time visual strength bar and checklist for:
-  - 8+ characters
-  - At least one uppercase letter (A-Z)
-  - At least one lowercase letter (a-z)
-  - At least one digit (0-9)
-  - At least one special character (`!@#$%^&*...`)
-- **Staged Registration Security**: Unverified users are **never** stored in the main `User` collection. Data is safely cached in a temporary OTP verification record with TTL expiry until the code is verified.
-- **Instant Redirection**: Navigates to Login page with a success banner upon completion.
+## Features
 
-### 2. Login with OTP (Page 2)
-- **Step 1: Identity Entry**: Accepts either registered **Email Address** or **10-Digit Mobile Number**.
-- **Step 2: 6-Digit OTP Verification**:
-  - Displays masked target (e.g. `a*******v@example.com` or `******3210`).
-  - Auto-advancing 6-box OTP input with full paste support (copy-paste all 6 digits).
-  - Live countdown timer (30-second cooldown) for requesting a new code.
-  - Option to edit email/mobile and return to Step 1.
-- **Step 3: Session Establishment**:
-  - Constant-time HMAC-SHA256 hash comparison.
-  - Generates signed JSON Web Token (JWT).
-  - Smooth animated redirect to the Protected Dashboard.
+### 1. User Registration
 
-### 3. Protected Dashboard (Post-Login View)
-- Protected by `ProtectedRoute` wrapper; unauthenticated visits automatically redirect to `/login`.
-- Displays user's Full Name, Email, Mobile number with verified status badges.
-- Displays last login timestamp, account creation date, and token status.
-- Live refresh profile action calling `GET /api/auth/me`.
-- Secure Logout action that invalidates the local JWT session.
+The registration page collects the following details:
 
-### 4. Enterprise-Grade Security
-- **Hashed OTPs**: OTPs are hashed using HMAC-SHA256 with unique cryptographically random salts; plain text OTPs are never persisted in the database.
-- **Constant-Time Verification**: Prevents timing side-channel attacks via `crypto.timingSafeEqual`.
-- **Throttling & Rate Limiting**:
-  - Maximum 5 failed verification attempts before the OTP is invalidated.
-  - IP-based rate limiting via `express-rate-limit`.
-  - Minimum 30-second resend cooldown.
-- **TTL Database Expiry**: MongoDB TTL indexes automatically clean up expired verification sessions after 5 minutes.
-- **Password Salting**: 12-round bcrypt password hashing.
+- Full name
+- Email address
+- Mobile number
+- Password
+- Confirm password
 
----
+The form validates user input on both the frontend and backend. Password validation checks for a minimum of eight characters, uppercase and lowercase letters, a number, and a special character.
 
-## 📁 Project Folder Structure
+A password strength indicator helps users check their password while entering it.
+
+After submitting the form, the application sends an OTP for verification. The user is added to the main `User` collection only after successful OTP verification. Pending registration details are stored separately in a temporary verification record.
+
+Once registration is completed, the user is redirected to the login page.
+
+### 2. OTP-Based Login
+
+Users can log in using their registered email address or mobile number.
+
+The login process consists of three steps:
+
+1. Enter a registered email address or mobile number.
+2. Receive and enter the six-digit OTP.
+3. Verify the OTP and establish an authenticated session.
+
+The OTP input supports automatic focus movement between fields and pasting all six digits at once. A countdown timer controls when the user can request another OTP.
+
+The destination is displayed in a masked format to avoid exposing the complete email address or mobile number on the screen.
+
+After successful verification, the backend generates a JWT, which the frontend uses to access protected APIs.
+
+### 3. Dashboard
+
+After login, users can access a protected dashboard displaying their profile information.
+
+The dashboard includes:
+
+- Full name, email address, and mobile number
+- Email and mobile verification status
+- Account creation date
+- Last login information
+- Profile refresh functionality
+- Logout functionality
+
+The `ProtectedRoute` component prevents unauthenticated users from accessing protected pages. The dashboard can also retrieve the latest profile information through `GET /api/auth/me`.
+
+### 4. Security and Validation
+
+The application includes the following security measures:
+
+- Server-side validation of registration and login inputs
+- bcrypt password hashing with a configured work factor of 12 rounds
+- HMAC-SHA256-based OTP verification
+- Constant-time comparison using `crypto.timingSafeEqual`
+- A maximum of five failed OTP attempts per verification session
+- Rate limiting for OTP-related endpoints
+- A minimum 30-second resend cooldown
+- Temporary OTP records with a five-minute MongoDB TTL expiry
+- JWT authentication middleware for protected APIs
+- Environment variables for application configuration and secrets
+
+OTP values should not be returned in API responses or displayed in the production frontend. Email and SMS delivery should use configured providers rather than development-only mock delivery.
+
+**Note:** JWT-based logout on the client removes the local session token. Immediate server-side token invalidation requires additional backend session or token-revocation handling if it is not already implemented.
+
+## Project Structure
 
 ```text
 Neosoft_Nodejs_LoginApp/
-├── client/                               # Frontend React (Vite) Application
+├── client/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── AlertBanner.jsx           # Clean dismissible error/success banners
-│   │   │   ├── AuthLayout.jsx            # Centered glassmorphic card & brand header
-│   │   │   ├── Button.jsx                # Accessible button with spinner & debounce
-│   │   │   ├── InputField.jsx            # Reusable input with show/hide password toggle
-│   │   │   ├── OtpInput.jsx              # 6-box auto-focus & paste-supported OTP input
-│   │   │   └── ProtectedRoute.jsx        # Route guard checking authentication
+│   │   │   ├── AlertBanner.jsx
+│   │   │   ├── AuthLayout.jsx
+│   │   │   ├── Button.jsx
+│   │   │   ├── InputField.jsx
+│   │   │   ├── OtpInput.jsx
+│   │   │   └── ProtectedRoute.jsx
 │   │   ├── context/
-│   │   │   └── AuthContext.jsx           # Global user & JWT session management
+│   │   │   └── AuthContext.jsx
 │   │   ├── pages/
-│   │   │   ├── Dashboard.jsx             # Authenticated user profile view
-│   │   │   ├── Login.jsx                 # 2-step OTP login page
-│   │   │   └── Register.jsx              # Form + email OTP verification page
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Login.jsx
+│   │   │   └── Register.jsx
 │   │   ├── services/
-│   │   │   ├── api.js                    # Axios instance with Bearer interceptor
-│   │   │   └── authService.js            # Authentication API functions
-│   │   ├── App.css                       # Modern UI, micro-animations & layout
-│   │   ├── App.jsx                       # React Router configuration
-│   │   ├── index.css                     # Global CSS variables & design tokens
-│   │   └── main.jsx                      # React 19 entrypoint
-│   ├── .env                              # Frontend environment config
-│   ├── .env.example                      # Template for frontend environment
+│   │   │   ├── api.js
+│   │   │   └── authService.js
+│   │   ├── App.css
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── .env
+│   ├── .env.example
 │   └── package.json
-│
-├── server/                               # Backend Node.js & Express REST API
+├── server/
 │   ├── config/
-│   │   └── db.js                         # Mongoose connection + MongoMemoryServer fallback
+│   │   └── db.js
 │   ├── controllers/
-│   │   └── authController.js             # REST API business logic
+│   │   └── authController.js
 │   ├── middleware/
-│   │   ├── authMiddleware.js             # Bearer JWT verification
-│   │   └── rateLimiter.js                # Rate limiters for OTP generation & verification
+│   │   ├── authMiddleware.js
+│   │   └── rateLimiter.js
 │   ├── models/
-│   │   ├── OtpVerification.js            # Temporary OTP session with TTL index
-│   │   └── User.js                       # Verified user profile with bcrypt hooks
+│   │   ├── OtpVerification.js
+│   │   └── User.js
 │   ├── routes/
-│   │   └── authRoutes.js                 # Authentication route mappings
+│   │   └── authRoutes.js
 │   ├── services/
-│   │   ├── emailService.js               # Nodemailer SMTP with dev mock fallback
-│   │   ├── otpService.js                 # Unified OTP generation & verification logic
-│   │   └── smsService.js                 # Twilio integration with dev mock fallback
+│   │   ├── emailService.js
+│   │   ├── otpService.js
+│   │   └── smsService.js
 │   ├── utils/
-│   │   ├── apiResponse.js                # Standardized JSON response helper
-│   │   ├── cryptoUtils.js                # Secure random generation & constant-time hash
-│   │   └── validators.js                 # Email, mobile, password & masking helpers
-│   ├── .env                              # Backend environment config
-│   ├── .env.example                      # Template for backend environment
-│   ├── app.js                            # Express app configuration & middleware
+│   │   ├── apiResponse.js
+│   │   ├── cryptoUtils.js
+│   │   └── validators.js
+│   ├── .env
+│   ├── .env.example
+│   ├── app.js
+│   ├── server.js
 │   ├── package.json
-│   ├── server.js                         # Server listener entrypoint
-│   └── test-auth-flow.js                 # Automated backend test suite
-│
+│   └── test-auth-flow.js
 ├── .gitignore
-├── package.json                          # Workspace root script orchestration
+├── package.json
 └── README.md
 ```
 
----
+## Prerequisites
 
-## ⚙️ Environment Variables
+Install the following before running the application:
 
-### Backend Configuration (`server/.env`)
+- Node.js 18 or later
+- npm
+- MongoDB installed locally or a MongoDB Atlas connection
+- SMTP credentials for email OTP delivery
+- Twilio credentials if SMS OTP delivery is required
+
+## Installation
+
+Clone the repository and open the project directory:
+
+```bash
+git clone <repository-url>
+cd Neosoft_Nodejs_LoginApp
+```
+
+Install the frontend and backend dependencies from the project root.
+
+**Windows PowerShell or Command Prompt:**
+
+```bash
+npm.cmd --prefix server install
+npm.cmd --prefix client install
+```
+
+**macOS or Linux:**
+
+```bash
+npm --prefix server install
+npm --prefix client install
+```
+
+## Environment Configuration
+
+### Backend — `server/.env`
+
+Create a `.env` file inside the `server` directory.
 
 ```ini
-# Server port and environment
 PORT=5000
 NODE_ENV=development
 CLIENT_URL=http://localhost:5173
 
-# MongoDB Connection
-# Set your local MongoDB or Atlas URI. If unreachable, the server automatically
-# starts MongoMemoryServer in-memory so the app works out-of-the-box!
 MONGODB_URI=mongodb://127.0.0.1:27017/neosoft_auth_db
 USE_MEMORY_DB=false
 
-# Security & Secrets
-JWT_SECRET=neosoft_super_secure_jwt_secret_token_key_2026_change_in_production
+JWT_SECRET=replace_with_a_secure_random_secret
 JWT_EXPIRES_IN=7d
-OTP_HASH_SECRET=neosoft_otp_hmac_secret_salt_key_2026
+OTP_HASH_SECRET=replace_with_a_separate_secure_secret
 
-# Email Delivery (Nodemailer / SMTP)
-# (Leave empty to use built-in Development Mock Delivery mode with console logs and UI dev helpers)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=
 SMTP_PASS=
-SMTP_FROM="Neosoft Auth App" <noreply@neosoft.com>
+SMTP_FROM="Neosoft Auth App" <your_email@gmail.com>
 
-# SMS Delivery (Twilio - Optional)
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_PHONE_NUMBER=
 ```
 
-### Frontend Configuration (`client/.env`)
+Replace the example secret values with securely generated secrets before running the application in a production environment.
+
+If MongoDB is unavailable and the configured fallback is enabled, the application may use an in-memory MongoDB instance. Data in this instance is temporary and will not survive its shutdown.
+
+### Frontend — `client/.env`
+
+Create a `.env` file inside the `client` directory.
 
 ```ini
-# Base URL for Backend REST API
 VITE_API_BASE_URL=http://localhost:5000/api
 ```
 
----
+Make sure the API URL matches the backend server address.
 
-## 🚀 Installation & Running the Application
+## Email OTP Configuration
 
-### 1. Prerequisites
-- **Node.js**: v18.0.0 or higher (v24.x tested)
-- **npm** / **npm.cmd**
+To send OTPs to real email inboxes, configure SMTP credentials in `server/.env`.
 
-### 2. Install Dependencies
-Run the command below in the project root:
-```bash
-# Windows PowerShell / CMD:
-npm.cmd --prefix server install && npm.cmd --prefix client install
+For Gmail:
 
-# macOS / Linux:
-npm --prefix server install && npm --prefix client install
-```
+1. Open your Google Account settings.
+2. Enable two-step verification.
+3. Generate an App Password, if available for your account.
+4. Set your Gmail address in `SMTP_USER`.
+5. Set the generated App Password in `SMTP_PASS`.
 
-### 3. Run the Backend Server
-```bash
-# Windows PowerShell:
-npm.cmd --prefix server run dev
+Example:
 
-# macOS / Linux:
-npm --prefix server run dev
-```
-The server will start on `http://localhost:5000`. If local MongoDB is not running, it automatically starts an in-memory MongoDB instance.
-
-### 4. Run the Frontend Development Server
-In a new terminal window:
-```bash
-# Windows PowerShell:
-npm.cmd --prefix client run dev
-
-# macOS / Linux:
-npm --prefix client run dev
-```
-Open your browser at `http://localhost:5173`.
-
----
-
-## 🧪 Testing the Application
-
-### Automated End-to-End Test Suite
-A dedicated verification suite tests all 13 core authentication requirements:
-```bash
-cd server
-node test-auth-flow.js
-```
-**Test coverage includes**:
-1. Server health check
-2. Missing field rejection (400)
-3. Weak password rejection (400)
-4. Successful registration staging & masked OTP dispatch (200)
-5. Ensuring unverified user is **not** in MongoDB prior to verification
-6. Rejecting wrong OTP and decrementing attempt count (400)
-7. Successful OTP verification, creating MongoDB record and generating JWT (201)
-8. Duplicate email/mobile registration prevention (409)
-9. Protected profile access via `GET /api/auth/me` with JWT (200)
-10. Unauthenticated access prevention (401)
-11. Login OTP dispatch via Mobile Number (200)
-12. Login OTP verification and session authentication (200)
-13. Logout endpoint handling (200)
-
----
-
-## 📡 REST API Reference
-
-| Method | Endpoint | Description | Protected |
-| :--- | :--- | :--- | :---: |
-| `POST` | `/api/auth/register` | Validate details and dispatch registration OTP | No |
-| `POST` | `/api/auth/register/verify-otp` | Verify OTP and persist user in MongoDB | No |
-| `POST` | `/api/auth/login/send-otp` | Dispatch login OTP to email or mobile | No |
-| `POST` | `/api/auth/login/verify-otp` | Verify OTP and return JWT session token | No |
-| `POST` | `/api/auth/resend-otp` | Resend OTP with cooldown enforcement | No |
-| `GET` | `/api/auth/me` | Fetch authenticated user profile | **Yes (JWT)** |
-| `POST` | `/api/auth/logout` | Terminate active user session | **Yes (JWT)** |
-| `GET` | `/api/health` | Service health status | No |
-
----
-
-## 🔒 Email & SMS Provider Configuration
-
-### 1. Live Gmail / SMTP Setup:
-In `server/.env`, configure your real SMTP credentials:
 ```ini
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -250,29 +251,167 @@ SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_gmail_app_password
 SMTP_FROM="Neosoft Auth App" <your_email@gmail.com>
 ```
-> **Note for Gmail:**
-> 1. Go to your **Google Account** > **Security**.
-> 2. Enable **2-Step Verification**.
-> 3. Search for **App Passwords** and generate a 16-character app password for "Mail".
-> 4. Use that app password as `SMTP_PASS`.
 
-### 2. Live Twilio SMS Setup:
-In `server/.env`, configure your Twilio account details:
+The application must have valid SMTP configuration to send real email OTPs. A development mock, if implemented, is for local testing only and does not deliver an email.
+
+## SMS OTP Configuration
+
+To send OTPs to real mobile numbers, configure your Twilio credentials:
+
 ```ini
-TWILIO_ACCOUNT_SID=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-TWILIO_AUTH_TOKEN=your_auth_token_here
-TWILIO_PHONE_NUMBER=+1XXXXXXXXXX
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=your_twilio_phone_number
 ```
 
-### 3. Strict Real Delivery & Validation Behavior:
-- When a user enters their email address and clicks **Send OTP**, Nodemailer sends the OTP code to their real email inbox.
-- If `SMTP_USER` or `SMTP_PASS` are unconfigured, the server returns HTTP 503 with:  
-  `"Email delivery service is not configured. Please set SMTP_HOST, SMTP_USER, and SMTP_PASS in server environment variables to send verification OTPs."`
-- If mobile is used and Twilio credentials are not set, the server returns HTTP 503 with:  
-  `"SMS delivery service is not configured. Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER in server environment variables to send verification OTPs via SMS."`
-- The OTP is **never** returned in API responses or displayed on the frontend UI.
-- The user must enter the OTP received in their real inbox/phone to verify and sign in.
----
+Use valid Twilio credentials and a sender number supported by your account. Check your Twilio account configuration and messaging restrictions if SMS delivery fails.
 
-## 📄 License
-ISC License — Neosoft Technologies 2026.
+If the required provider credentials are missing, the application should report a delivery configuration error rather than treating the OTP as successfully delivered.
+
+## Running the Application
+
+Start the backend and frontend in separate terminal windows.
+
+### 1. Start the backend
+
+From the project root:
+
+```bash
+npm.cmd --prefix server run dev
+```
+
+On macOS or Linux:
+
+```bash
+npm --prefix server run dev
+```
+
+The backend should be available at:
+
+`http://localhost:5000`
+
+Confirm that the `dev` script exists in `server/package.json`. If it does not, use the script configured in that file.
+
+### 2. Start the frontend
+
+Open a second terminal and run:
+
+```bash
+npm.cmd --prefix client run dev
+```
+
+On macOS or Linux:
+
+```bash
+npm --prefix client run dev
+```
+
+The frontend should be available at:
+
+`http://localhost:5173`
+
+Open the frontend URL in your browser to register a new user and test the authentication flow.
+
+## API Endpoints
+
+All authentication endpoints use the `/api/auth` base path.
+
+| Method | Endpoint | Description | Authentication |
+|---|---|---|---|
+| POST | `/api/auth/register` | Validate registration details and send OTP | Not required |
+| POST | `/api/auth/register/verify-otp` | Verify registration OTP and create the user | Not required |
+| POST | `/api/auth/login/send-otp` | Send a login OTP | Not required |
+| POST | `/api/auth/login/verify-otp` | Verify login OTP and return a JWT | Not required |
+| POST | `/api/auth/resend-otp` | Request another OTP subject to cooldown rules | Not required |
+| GET | `/api/auth/me` | Retrieve the authenticated user's profile | JWT required |
+| POST | `/api/auth/logout` | Handle logout | JWT required, if enforced by the route |
+| GET | `/api/health` | Check backend health | Not required |
+
+Protected endpoints require a valid access token in the request header:
+
+```http
+Authorization: Bearer <jwt-token>
+```
+
+The exact request body, response format, and status codes depend on the implementation in `authRoutes.js` and `authController.js`.
+
+## Testing
+
+The backend includes a test script at `server/test-auth-flow.js`.
+
+Run it from the project root:
+
+```bash
+node server/test-auth-flow.js
+```
+
+The test suite is intended to cover the main authentication scenarios:
+
+1. Backend health check
+2. Validation of required fields
+3. Rejection of weak passwords
+4. Registration OTP generation and dispatch
+5. Prevention of user creation before OTP verification
+6. Rejection of an incorrect OTP
+7. Successful OTP verification and user creation
+8. Duplicate email and mobile number checks
+9. Authenticated profile retrieval
+10. Rejection of unauthenticated profile requests
+11. Login OTP delivery to a mobile number
+12. Successful OTP-based login
+13. Logout handling
+
+Run the tests with the required database and environment configuration. Actual provider delivery tests require valid email or SMS credentials.
+
+The list above describes the intended test coverage; confirm that each test passes before reporting the suite as fully successful.
+
+## Troubleshooting
+
+**Backend does not start**
+
+- Check that the required dependencies are installed.
+- Verify the `dev` script in `server/package.json`.
+- Check whether port `5000` is already in use.
+- Review the terminal output for database connection or environment errors.
+
+**Frontend cannot reach the backend**
+
+- Confirm that the backend is running.
+- Check `VITE_API_BASE_URL` in `client/.env`.
+- Verify the CORS configuration and `CLIENT_URL` value.
+- Restart the Vite development server after changing environment variables.
+
+**OTP email is not received**
+
+- Check the SMTP host, port, username, and App Password.
+- Check the server logs for delivery errors.
+- Check the spam folder and email provider restrictions.
+
+**SMS OTP is not received**
+
+- Verify the Twilio credentials and sender number.
+- Check the destination number format and Twilio messaging permissions.
+- Review the backend logs for provider errors.
+
+**Login fails after entering the correct OTP**
+
+- Check whether the OTP has expired or the attempt limit has been reached.
+- Verify that the frontend sends the expected request body.
+- Check the backend response and JWT configuration.
+- Confirm that the protected API receives the token in the expected header.
+
+## Security Notes
+
+- Do not commit `.env` files or real credentials to GitHub.
+- Keep `.env.example` limited to placeholder values.
+- Use separate, securely generated secrets for JWT signing and OTP hashing.
+- Use HTTPS in production.
+- Keep dependencies updated and review authentication-related changes carefully.
+- Apply rate limits and appropriate validation to all authentication endpoints.
+- Ensure production error responses do not expose OTPs, passwords, tokens, or internal stack traces.
+- Configure production-grade database backups and access controls.
+- Review token expiry, revocation, and logout behavior before deployment.
+
+## License
+
+ISC

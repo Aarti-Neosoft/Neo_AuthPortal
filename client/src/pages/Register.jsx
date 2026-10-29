@@ -392,7 +392,7 @@ export const Register = () => {
                   color: '#1d4ed8'
                 }}
               >
-                âš¡ Click to Auto-fill Demo OTP: <strong>{devOtp}</strong>
+                Click to Auto-fill Demo OTP: <strong>{devOtp}</strong>
               </button>
             )}
             {import.meta.env.DEV && !devOtp && (

@@ -13,6 +13,7 @@ router.post('/login/verify-otp', otpVerifyLimiter, authController.verifyLoginOtp
 router.post('/resend-otp', otpSendLimiter, authController.resendOtp);
 
 router.get('/me', authenticateJwt, authController.getMe);
+router.get('/users', authenticateJwt, authController.getUsers);
 router.post('/logout', authenticateJwt, authController.logout);
 
 module.exports = router;

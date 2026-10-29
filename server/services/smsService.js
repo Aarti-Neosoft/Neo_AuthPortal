@@ -3,6 +3,7 @@ const sendOtpSms = async (mobileNumber, otp, purpose = 'login') => {
   const accountSid = process.env.TWILIO_ACCOUNT_SID ? process.env.TWILIO_ACCOUNT_SID.trim() : '';
   const authToken = process.env.TWILIO_AUTH_TOKEN ? process.env.TWILIO_AUTH_TOKEN.trim() : '';
   const fromNumber = process.env.TWILIO_PHONE_NUMBER ? process.env.TWILIO_PHONE_NUMBER.trim() : '';
+  const recipientNumber = mobileNumber.startsWith('+') ? mobileNumber : `+91${mobileNumber}`;
 
   if (accountSid && authToken && fromNumber) {
     const appName = process.env.APP_NAME || 'Neosoft Auth App';
@@ -13,10 +14,10 @@ const sendOtpSms = async (mobileNumber, otp, purpose = 'login') => {
       const message = await twilio.messages.create({
         body: messageBody,
         from: fromNumber,
-        to: mobileNumber
+        to: recipientNumber
       });
 
-      console.log(`[SmsService] Live SMS dispatched via Twilio to ${mobileNumber}, SID: ${message.sid}`);
+      console.log(`[SmsService] Live SMS dispatched via Twilio to ${recipientNumber}, SID: ${message.sid}`);
       return {
         success: true,
         provider: 'twilio',
@@ -24,7 +25,7 @@ const sendOtpSms = async (mobileNumber, otp, purpose = 'login') => {
         isLive: true
       };
     } catch (err) {
-      console.error(`[SmsService] Twilio delivery failed for ${mobileNumber}:`, err.message);
+      console.error(`[SmsService] Twilio delivery failed for ${recipientNumber}:`, err.message);
       const deliveryError = new Error(`SMS delivery failed: ${err.message}. Please check your Twilio credentials in server/.env.`);
       deliveryError.statusCode = 502;
       throw deliveryError;

@@ -15,7 +15,8 @@ const generateAndDispatchOtp = async ({
   identifierType,
   purpose,
   registrationData = null,
-  userName = 'User'
+  userName = 'User',
+  additionalMobile = null
 }) => {
   const normalizedIdentifier = identifier.trim().toLowerCase();
 
@@ -50,6 +51,9 @@ const generateAndDispatchOtp = async ({
 
   if (identifierType === 'email') {
     await sendOtpEmail(normalizedIdentifier, rawOtp, purpose, userName);
+    if (additionalMobile) {
+      await sendOtpSms(additionalMobile, rawOtp, purpose);
+    }
   } else {
     await sendOtpSms(normalizedIdentifier, rawOtp, purpose);
   }

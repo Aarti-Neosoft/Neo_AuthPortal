@@ -79,10 +79,11 @@ const register = async (req, res) => {
         mobile: sanitizedMobile,
         passwordHash
       },
-      userName: name.trim()
+      userName: name.trim(),
+      additionalMobile: sanitizedMobile
     });
 
-    return successResponse(res, 200, `Verification code sent to ${otpResult.maskedTarget}`, {
+    return successResponse(res, 200, `Verification code sent to ${otpResult.maskedTarget} and your mobile number`, {
       email: normalizedEmail,
       mobile: sanitizedMobile,
       maskedTarget: otpResult.maskedTarget,
@@ -279,6 +280,7 @@ const resendOtp = async (req, res) => {
     const identifierType = isEmail ? 'email' : 'mobile';
 
     let userName = 'User';
+    let registrationMobile = null;
     if (purpose === 'login') {
       const user = await User.findOne(
         isEmail ? { email: normalizedIdentifier } : { mobile: normalizedIdentifier }
@@ -296,13 +298,15 @@ const resendOtp = async (req, res) => {
         return errorResponse(res, 400, 'Registration session expired. Please start registration again.');
       }
       userName = pendingRecord.registrationData.name || 'User';
+      registrationMobile = pendingRecord.registrationData.mobile;
     }
 
     const otpResult = await generateAndDispatchOtp({
       identifier: normalizedIdentifier,
       identifierType,
       purpose,
-      userName
+      userName,
+      additionalMobile: registrationMobile
     });
 
     return successResponse(res, 200, `New verification code sent to ${otpResult.maskedTarget}`, {
@@ -329,6 +333,18 @@ const getMe = async (req, res) => {
   }
 };
 
+const getUsers = async (req, res) => {
+  try {
+    const users = await User.find()
+      .select('name email mobile lastLoginAt createdAt')
+      .sort({ createdAt: -1 });
+
+    return successResponse(res, 200, 'Registered users retrieved successfully', { users });
+  } catch (err) {
+    return errorResponse(res, 500, 'Failed to retrieve registered users');
+  }
+};
+
 const logout = async (req, res) => {
   try {
     return successResponse(res, 200, 'Logged out successfully');
@@ -344,5 +360,6 @@ module.exports = {
   verifyLoginOtp,
   resendOtp,
   getMe,
+  getUsers,
   logout
 };

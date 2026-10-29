@@ -160,7 +160,7 @@ export const Login = () => {
       }
       subtitle={
         step === 'identifier'
-          ? 'Enter your registered email address or mobile number to receive a secure login code'
+          ? 'Enter your registered email address to receive a secure login code'
           : `We dispatched a 6-digit login code to ${maskedTarget}`
       }
       badgeText="Secure OTP Login"
@@ -184,8 +184,8 @@ export const Login = () => {
             id="login-identifier"
             name="identifier"
             type="text"
-            label="Email Address or Mobile Number"
-            placeholder="e.g. name@example.com or 9876543210"
+            label="Email Address"
+            placeholder="e.g. name@example.com"
             icon={isEmailInput ? Mail : Phone}
             value={identifier}
             onChange={(e) => {

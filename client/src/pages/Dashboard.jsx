@@ -1,17 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
-  ShieldCheck,
-  LogOut,
-  User,
-  Mail,
-  Phone,
-  Calendar,
-  Clock,
-  CheckCircle,
-  RefreshCw,
-  KeyRound,
-  ShieldAlert
+  Bell, Calendar, ChevronDown, Clock3, LayoutDashboard, LogOut, Mail,
+  RefreshCw, Search, ShieldCheck, Smartphone, User, Users
 } from 'lucide-react';
 import authService from '../services/authService';
 
@@ -19,6 +10,26 @@ export const Dashboard = () => {
   const { user, logoutUser, setUser } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activePage, setActivePage] = useState('user-list');
+  const [registeredUsers, setRegisteredUsers] = useState([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+
+  const loadUsers = async () => {
+    setIsLoadingUsers(true);
+    try {
+      const response = await authService.getUsers();
+      setRegisteredUsers(response?.data?.users || []);
+    } catch (err) {
+      console.error('Failed to load registered users:', err);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
   const handleRefreshProfile = async () => {
     setIsRefreshing(true);
@@ -28,9 +39,10 @@ export const Dashboard = () => {
       if (response?.data?.user) {
         setUser(response.data.user);
         localStorage.setItem('neosoft_user', JSON.stringify(response.data.user));
-        setRefreshMessage('Profile up to date!');
+        setRefreshMessage('User information is up to date.');
         setTimeout(() => setRefreshMessage(''), 3000);
       }
+      await loadUsers();
     } catch (err) {
       console.error('Failed to refresh profile:', err);
     } finally {
@@ -39,184 +51,117 @@ export const Dashboard = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Not available';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
+    if (!dateString) return '—';
+    return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     });
   };
 
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+  const getInitials = (name) => (name || 'User')
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  const filteredUsers = registeredUsers.filter((registeredUser) =>
+    [registeredUser.name, registeredUser.email, registeredUser.mobile]
+      .filter(Boolean)
+      .some((value) => value.toLowerCase().includes(searchTerm.trim().toLowerCase()))
+  );
+
+  const pageDetails = {
+    dashboard: { eyebrow: 'Overview', title: 'Dashboard', description: 'Your account at a glance.' },
+    'user-list': { eyebrow: 'Account Directory', title: 'User List', description: 'Manage the available registered user information.' },
+    profile: { eyebrow: 'Account Settings', title: 'My Profile', description: 'View your registered profile details.' }
   };
 
+  const activeDetails = pageDetails[activePage];
+
   return (
-    <div className="dashboard-container">
-      <nav className="dashboard-navbar">
-        <div className="navbar-brand">
-          <div className="brand-logo-badge small">
-            <ShieldCheck size={22} />
-          </div>
-          <div className="navbar-brand-text">
-            <span className="brand-title">Neosoft Technologies</span>
-            <span className="brand-sub">Auth Portal</span>
-          </div>
+    <div className="portal-shell">
+      <aside className="portal-sidebar">
+        <div className="sidebar-brand">
+          <span className="sidebar-brand-mark"><ShieldCheck size={20} /></span>
+          <span><strong>Neosoft Technologies</strong><small>Auth Portal</small></span>
         </div>
 
-        <div className="navbar-actions">
-          <div className="user-mini-badge">
-            <div className="avatar-circle small">{getInitials(user?.name)}</div>
-            <span className="user-mini-name">{user?.name || 'User'}</span>
-          </div>
-          <button
-            type="button"
-            onClick={logoutUser}
-            className="logout-nav-btn"
-            title="Log out of session"
-          >
-            <LogOut size={16} />
-            <span>Logout</span>
-          </button>
-        </div>
-      </nav>
+        <nav className="sidebar-nav" aria-label="Primary navigation">
+          <button type="button" onClick={() => setActivePage('dashboard')} className={`sidebar-nav-item ${activePage === 'dashboard' ? 'is-active' : ''}`}><LayoutDashboard size={18} />Dashboard</button>
+          <button type="button" onClick={() => setActivePage('user-list')} className={`sidebar-nav-item ${activePage === 'user-list' ? 'is-active' : ''}`}><Users size={18} />User List</button>
+          <button type="button" onClick={() => setActivePage('profile')} className={`sidebar-nav-item ${activePage === 'profile' ? 'is-active' : ''}`}><User size={18} />My Profile</button>
+        </nav>
 
-      <main className="dashboard-main">
-        <section className="welcome-banner">
-          <div className="welcome-text-col">
-            <div className="welcome-badge">
-              <span className="status-dot-pulse" />
-              <span>Active Authenticated Session (JWT)</span>
-            </div>
-            <h1 className="welcome-heading">Welcome back, {user?.name || 'User'}!</h1>
-            <p className="welcome-subtext">
-              Your account is securely verified via OTP authentication. Here are your account details and security status.
-            </p>
-          </div>
-          <div className="welcome-avatar-col">
-            <div className="avatar-circle large">{getInitials(user?.name)}</div>
-          </div>
-        </section>
+        <button type="button" onClick={logoutUser} className="sidebar-logout"><LogOut size={18} /><span>Logout</span></button>
+      </aside>
 
-        {refreshMessage && (
-          <div className="refresh-toast">
-            <CheckCircle size={16} />
-            <span>{refreshMessage}</span>
-          </div>
-        )}
+      <div className="portal-content">
+        <header className="portal-topbar">
+          <button type="button" className="notification-button" aria-label="Notifications"><Bell size={19} /></button>
+          <div className="topbar-user"><span className="topbar-avatar">{getInitials(user?.name)}</span><span className="topbar-user-name">{user?.name || 'User'}</span><ChevronDown size={15} /></div>
+        </header>
 
-        <div className="dashboard-grid">
-          <div className="dashboard-card">
-            <div className="card-header-row">
-              <div className="card-header-title">
-                <User size={20} className="card-header-icon" />
-                <h2>Profile Information</h2>
-              </div>
-              <button
-                type="button"
-                onClick={handleRefreshProfile}
-                disabled={isRefreshing}
-                className="refresh-btn-icon"
-                title="Refresh Profile"
-              >
-                <RefreshCw size={16} className={isRefreshing ? 'spin-icon' : ''} />
-              </button>
-            </div>
-
-            <div className="card-content-list">
-              <div className="detail-item">
-                <span className="detail-label">Full Name</span>
-                <span className="detail-value">{user?.name || 'N/A'}</span>
-              </div>
-
-              <div className="detail-item">
-                <span className="detail-label">Email Address</span>
-                <div className="detail-value-with-badge">
-                  <Mail size={15} className="detail-sub-icon" />
-                  <span>{user?.email || 'N/A'}</span>
-                  <span className="verified-chip">
-                    <CheckCircle size={12} />
-                    Verified
-                  </span>
-                </div>
-              </div>
-
-              <div className="detail-item">
-                <span className="detail-label">Mobile Number</span>
-                <div className="detail-value-with-badge">
-                  <Phone size={15} className="detail-sub-icon" />
-                  <span>{user?.mobile || 'N/A'}</span>
-                  <span className="verified-chip">
-                    <CheckCircle size={12} />
-                    Verified
-                  </span>
-                </div>
-              </div>
-            </div>
+        <main className="user-list-main">
+          <div className="page-heading">
+            <div><span className="page-eyebrow">{activeDetails.eyebrow}</span><h1>{activeDetails.title}</h1><p>{activeDetails.description}</p></div>
+            <button type="button" onClick={handleRefreshProfile} disabled={isRefreshing} className="refresh-users-button"><RefreshCw size={16} className={isRefreshing ? 'spin-icon' : ''} />{isRefreshing ? 'Refreshing...' : 'Refresh'}</button>
           </div>
 
-          <div className="dashboard-card">
-            <div className="card-header-row">
-              <div className="card-header-title">
-                <KeyRound size={20} className="card-header-icon" />
-                <h2>Security & Session</h2>
-              </div>
-            </div>
+          {refreshMessage && <div className="dashboard-toast">{refreshMessage}</div>}
 
-            <div className="card-content-list">
-              <div className="detail-item">
-                <span className="detail-label">Authentication Method</span>
-                <span className="detail-value font-medium">OTP (One-Time Password)</span>
+          {activePage === 'dashboard' && (
+            <section className="dashboard-overview">
+              <div className="dashboard-welcome-card"><div><span className="welcome-small-label">Welcome back</span><h2>{user?.name || 'User'}</h2><p>Your Neosoft Auth Portal account is secured with OTP verification.</p></div><span className="overview-avatar">{getInitials(user?.name)}</span></div>
+              <div className="overview-stat-grid">
+                <div className="overview-stat"><Users size={20} /><span>Registered Users<strong>{registeredUsers.length}</strong></span></div>
+                <div className="overview-stat"><Mail size={20} /><span>Email Address<strong>{user?.email || '—'}</strong></span></div>
+                <div className="overview-stat"><Calendar size={20} /><span>Member Since<strong>{formatDate(user?.createdAt)}</strong></span></div>
               </div>
+            </section>
+          )}
 
-              <div className="detail-item">
-                <span className="detail-label">Last Login Timestamp</span>
-                <div className="detail-value-with-badge">
-                  <Clock size={15} className="detail-sub-icon" />
-                  <span>{formatDate(user?.lastLoginAt || user?.updatedAt)}</span>
-                </div>
+          {activePage === 'user-list' && (
+            <section className="user-list-card">
+              <div className="user-list-toolbar">
+                <label className="user-search-field"><Search size={18} /><input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search by name, email or mobile..." aria-label="Search users" /></label>
+                <div className="list-count"><Users size={16} /> {registeredUsers.length} registered {registeredUsers.length === 1 ? 'user' : 'users'}</div>
               </div>
-
-              <div className="detail-item">
-                <span className="detail-label">Account Created</span>
-                <div className="detail-value-with-badge">
-                  <Calendar size={15} className="detail-sub-icon" />
-                  <span>{formatDate(user?.createdAt)}</span>
-                </div>
+              <div className="user-table-scroll">
+                <table className="user-table">
+                  <thead><tr><th>User</th><th>Email</th><th>Mobile</th><th>Last Login</th><th>Joined On</th></tr></thead>
+                  <tbody>
+                    {isLoadingUsers ? (
+                      <tr><td className="empty-user-row" colSpan="5">Loading registered users...</td></tr>
+                    ) : filteredUsers.length ? filteredUsers.map((registeredUser) => (
+                      <tr key={registeredUser._id || registeredUser.email}>
+                        <td><div className="table-user"><span className="table-avatar">{getInitials(registeredUser.name)}</span><span>{registeredUser.name || 'User'}</span></div></td>
+                        <td><span className="table-data"><Mail size={15} />{registeredUser.email || '—'}</span></td>
+                        <td><span className="table-data"><Smartphone size={15} />{registeredUser.mobile || '—'}</span></td>
+                        <td><span className="table-data"><Clock3 size={15} />{formatDate(registeredUser.lastLoginAt || registeredUser.updatedAt)}</span></td>
+                        <td><span className="table-data"><Calendar size={15} />{formatDate(registeredUser.createdAt)}</span></td>
+                      </tr>
+                    )) : <tr><td className="empty-user-row" colSpan="5">No user matches your search.</td></tr>}
+                  </tbody>
+                </table>
               </div>
+            </section>
+          )}
 
-              <div className="detail-item">
-                <span className="detail-label">Session Status</span>
-                <span className="detail-value text-success font-medium">
-                  Valid JWT Token Active
-                </span>
+          {activePage === 'profile' && (
+            <section className="profile-view-card">
+              <div className="profile-view-header"><span className="profile-large-avatar">{getInitials(user?.name)}</span><div><h2>{user?.name || 'User'}</h2><p>Registered user profile</p></div></div>
+              <div className="profile-detail-grid">
+                <div className="profile-detail"><span><User size={16} />Full Name</span><strong>{user?.name || '—'}</strong></div>
+                <div className="profile-detail"><span><Mail size={16} />Email Address</span><strong>{user?.email || '—'}</strong></div>
+                <div className="profile-detail"><span><Smartphone size={16} />Mobile Number</span><strong>{user?.mobile || '—'}</strong></div>
+                <div className="profile-detail"><span><Calendar size={16} />Joined On</span><strong>{formatDate(user?.createdAt)}</strong></div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <section className="security-notice-card">
-          <div className="notice-icon-box">
-            <ShieldAlert size={24} className="notice-icon" />
-          </div>
-          <div className="notice-text-box">
-            <h3>Enterprise Security Compliance</h3>
-            <p>
-              Your password is encrypted with 12-round bcrypt salting. All verification codes are
-              cryptographically hashed in memory and invalidated after use or 5 minutes.
-            </p>
-          </div>
-        </section>
-      </main>
+            </section>
+          )}
+        </main>
+      </div>
     </div>
   );
 };
